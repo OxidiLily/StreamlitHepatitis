@@ -16,7 +16,7 @@ import pickle
 
 
 
-st.title("Masukkan Dataset")
+st.title("Masukkan Dataset Hepatitis")
 
 uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
 if uploaded_file is not None:
@@ -24,22 +24,22 @@ if uploaded_file is not None:
         st.markdown('**Dataset**')
         hepatitis_data = df
 
-
+        st.write('')
         st.write('1. membaca data set hepatitis')
         hepatitis_data.shape
         st.write(hepatitis_data.head())
-
+        st.write('')
         st.write('2. Memeriksa statistik ringkasan dasar dari data')
         st.write(hepatitis_data.describe())
-
+        st.write('')
         st.write('3.Check for value counts in target variabel')
         st.write(hepatitis_data.target.value_counts())
-
+        st.write('')
         st.write('4.Periksa tipe data setiap variabel')
         st.write(hepatitis_data.dtypes)
         cat_cols = hepatitis_data.columns[hepatitis_data.nunique() < 5]
         num_cols = hepatitis_data.columns[hepatitis_data.nunique() >= 5]
-
+        st.write('')
         st.write('5. hapus kolom yang tidak signifikan')
         hepatitis_data.drop(["ID"], axis = 1, inplace=True)
         num_cols = hepatitis_data.columns[hepatitis_data.nunique() >= 5]
@@ -51,26 +51,26 @@ if uploaded_file is not None:
                     'liverFirm', 'spleen', 'spiders', 'ascites', 'varices', 'histology']
         st.write(num_cols)
         st.write(cat_cols)
-
+        st.write('')
         st.write('7. memeriksa nilai nol ')
         st.write(hepatitis_data.isnull().sum())
-
+        st.write('')
         st.write('8. Membagi data menjadi x dan y')
         x = hepatitis_data.drop(["target"], axis = 1)
         y = hepatitis_data["target"]
         st.write(x.shape, y.shape)
-
+        st.write('')
         st.write('9. Pisahkan data menjadi X_train, X_test, y_train, y_test dengan test_size = 0.20 menggunakan sklearn')
         X_train, X_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 123)
         st.write(X_train.shape,X_test.shape,y_train.shape,y_test.shape)
-
+        st.write('')
         st.write('10. periksa nilai null pada train dan test, periksa value_count pada y_train dan y_test')
         st.write(y_train.value_counts()/X_train.shape[0])
         st.write('nilai null data train')
         st.write(X_train.isna().sum())
         st.write('nilai null data test')
         st.write(X_test.isna().sum())
-
+        st.write('')
         st.write('11. Menghitung Kolom Kategorikal dengan modus dan kolom Numerik dengan rata-rata')
         df_cat_train = X_train[cat_cols]
         df_cat_test = X_test[cat_cols]
@@ -98,7 +98,7 @@ if uploaded_file is not None:
         X_train[cat_cols] = X_train[cat_cols].astype('int')
         # Test
         X_test[cat_cols] = X_test[cat_cols].astype('int')
-
+        st.write('')
         st.write('12. mengecilkan kolom katergorikal')
         ## Convert Categorical Columns to Dummies
         # Train
@@ -109,6 +109,8 @@ if uploaded_file is not None:
         st.write(X_train.columns)
         st.write('X test')
         st.write(X_test.columns)
+        st.write('')
+        st.write('13.Scale the numeric attributes ["age", "bili", "alk", "sgot", "albu", "protime"]')
         #num_cols = ["age", "bili", "alk", "sgot", "albu", "protime"]
         scaler = StandardScaler()
         scaler.fit(X_train.loc[:,num_cols])
@@ -117,6 +119,8 @@ if uploaded_file is not None:
         #X_train[num_cols] = scaler.transform(X_train[num_cols])
         # scale on test
         X_test.loc[:,num_cols] = scaler.transform(X_test.loc[:,num_cols])
+
+        st.write('METODE KLASIFIKASI  SVM')
         # Create a SVC classifier using a linear kernel
         linear_svm = SVC(kernel='linear', C=1, random_state=0)
         # Train the classifier
@@ -136,7 +140,7 @@ if uploaded_file is not None:
         st.write("\nTEST DATA ACCURACY",accuracy_score(y_test,test_predictions))
         st.write("\nTest data f1-score for class '1'",f1_score(y_test,test_predictions,pos_label=1))
         st.write("\nTest data f1-score for class '2'",f1_score(y_test,test_predictions,pos_label=2))
-        st.write('Create an SVC object and print it to see the arguments') 
+        st.write('Create an SVC object and see the arguments') 
         svc = SVC(kernel='rbf', random_state=0, gamma=0.01, C=1)
         st.write(svc)
         st.write('Train the model')
@@ -157,8 +161,9 @@ if uploaded_file is not None:
         st.write("\nTEST DATA ACCURACY",accuracy_score(y_test,test_predictions))
         st.write("\nTest data f1-score for class '1'",f1_score(y_test,test_predictions,pos_label=1))
         st.write("\nTest data f1-score for class '2'",f1_score(y_test,test_predictions,pos_label=2))
+        st.write('')
+        st.write('14. SVM dengan Pencarian Grid untuk Penyetelan Paramater')
         svc_grid = SVC()
-        
         param_grid = { 
                         'C': [0.001, 0.01, 0.1, 1, 10, 100 ],
                         'gamma': [0, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100], 
@@ -185,7 +190,7 @@ if uploaded_file is not None:
         st.write("\nTest data f1-score for class '1'",f1_score(y_test,test_predictions,pos_label=1))
         st.write("\nTest data f1-score for class '2'",f1_score(y_test,test_predictions,pos_label=2))
 
-
+        st.write('')
         st.write('15. Simpan model')
         filename = 'model_hepatitis.sav'
         pickle.dump(linear_svm, open(filename, 'wb'))
