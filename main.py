@@ -198,8 +198,17 @@ if uploaded_file is not None:
         pickle.dump(linear_svm, open(filename, 'wb'))
         with open("model_hepatitis.sav", "rb") as file:
             btn = st.download_button(
-                    label="Download Model Hepatitis",
+                    label="Download Hasil Model Hepatitis",
                     data=file,
                     file_name=filename,
+                    mime="sav"
+                )
+else:
+    st.subheader("Contoh Dataset Hepatitis")
+    with open("hepatitis.csv", "rb") as file:
+            btn = st.download_button(
+                    label="Download Contoh Hepatitis.csv",
+                    data=file,
+                    file_name='hepatitis.csv',
                     mime="sav"
                 )
