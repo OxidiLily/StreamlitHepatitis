@@ -15,8 +15,8 @@ from sklearn.model_selection import GridSearchCV
 import pickle
 
 
-
-st.title("Masukkan Dataset Hepatitis")
+st.title('Data mining klasifikasi hepatitis')
+st.subheader("Masukkan Dataset Hepatitis")
 
 uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
 if uploaded_file is not None:
