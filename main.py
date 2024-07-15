@@ -49,7 +49,9 @@ if uploaded_file is not None:
         num_cols = ["age", "bili", "alk", "sgot", "albu", "protime"]
         cat_cols = ['gender', 'steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liverBig', 
                     'liverFirm', 'spleen', 'spiders', 'ascites', 'varices', 'histology']
+        st.write('num_cols')
         st.write(num_cols)
+        st.write('cat_cols')
         st.write(cat_cols)
         st.write('')
         st.write('7. memeriksa nilai nol ')
