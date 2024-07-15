@@ -120,7 +120,7 @@ if uploaded_file is not None:
         # scale on test
         X_test.loc[:,num_cols] = scaler.transform(X_test.loc[:,num_cols])
 
-        st.write('METODE KLASIFIKASI  SVM')
+        st.write('METODE KLASIFIKASI SVM')
         # Create a SVC classifier using a linear kernel
         linear_svm = SVC(kernel='linear', C=1, random_state=0)
         # Train the classifier
