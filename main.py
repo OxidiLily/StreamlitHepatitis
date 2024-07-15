@@ -210,5 +210,5 @@ else:
                     label="Download Contoh Hepatitis.csv",
                     data=file,
                     file_name='hepatitis.csv',
-                    mime="sav"
+                    mime="text/csv"
                 )
