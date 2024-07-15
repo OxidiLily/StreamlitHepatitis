@@ -33,7 +33,6 @@ packaging                 ==24.1
 pandas                    ==2.2.2
 parso                     ==0.8.4
 pillow                    ==10.4.0
-pip                       ==24.1.2
 platformdirs              ==4.2.2
 prompt_toolkit            ==3.0.47
 protobuf                  ==5.27.2
