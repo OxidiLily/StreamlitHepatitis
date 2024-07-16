@@ -242,12 +242,12 @@ bili = st.slider(
 
 alk = st.slider(
     "Select a range of alk",
-    0.0, 1000.0, (30.0))
+    0, 1000, (30))
 
 
 sgot = st.slider(
     "Select a range of sgot",
-    0.0, 1000.0, (225.0))
+    0, 1000, (225))
  
 
 albu = st.slider(
