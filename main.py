@@ -1,214 +1,264 @@
-import os
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import confusion_matrix
-import warnings
-warnings.filterwarnings("ignore")
-import streamlit as st
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score,f1_score,confusion_matrix
-from sklearn.model_selection import GridSearchCV
-import pickle
+import warnings
+import streamlit as st
+warnings.filterwarnings("ignore")
 
 
 st.title('Data mining Klasifikasi Hepatitis')
-st.subheader("Masukkan Dataset Hepatitis")
+# Load data
+hepatitis_data = pd.read_csv("hepatitis.csv", na_values="?")
+hepatitis_data = hepatitis_data.dropna(subset=['target'])
 
-uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
-if uploaded_file is not None:
-        df= pd.read_csv(uploaded_file, na_values="?")
-        st.markdown('**Dataset**')
-        hepatitis_data = df
+# Check target distribution
+# print("Target distribution:\n", hepatitis_data['target'].value_counts(normalize=True))
 
-        st.write('')
-        st.write('1. membaca data set hepatitis')
-        hepatitis_data.shape
-        st.write(hepatitis_data.head())
-        st.write('')
-        st.write('2. Memeriksa statistik ringkasan dasar dari data')
-        st.write(hepatitis_data.describe())
-        st.write('')
-        st.write('3.Check for value counts in target variabel')
-        st.write(hepatitis_data.target.value_counts())
-        st.write('')
-        st.write('4.Periksa tipe data setiap variabel')
-        st.write(hepatitis_data.dtypes)
-        cat_cols = hepatitis_data.columns[hepatitis_data.nunique() < 5]
-        num_cols = hepatitis_data.columns[hepatitis_data.nunique() >= 5]
-        st.write('')
-        st.write('5. hapus kolom yang tidak signifikan')
-        hepatitis_data.drop(["ID"], axis = 1, inplace=True)
-        num_cols = hepatitis_data.columns[hepatitis_data.nunique() >= 5]
-        st.write(hepatitis_data.head())
+# Define numeric and categorical columns
+num_cols = ["age", "bili", "alk", "sgot", "albu", "protime"]
+cat_cols = ['gender', 'steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liverBig', 
+            'liverFirm', 'spleen', 'spiders', 'ascites', 'varices', 'histology']
 
-        st.write('6. Identifikasi Kolom Kategorikal dan simpan dalam variabel cat_cols dan numerik ke dalam num_cols')
-        num_cols = ["age", "bili", "alk", "sgot", "albu", "protime"]
-        cat_cols = ['gender', 'steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liverBig', 
-                    'liverFirm', 'spleen', 'spiders', 'ascites', 'varices', 'histology']
-        st.write('num_cols')
-        st.write(num_cols)
-        st.write('cat_cols')
-        st.write(cat_cols)
-        st.write('')
-        st.write('7. memeriksa nilai nol ')
-        st.write(hepatitis_data.isnull().sum())
-        st.write('')
-        st.write('8. Membagi data menjadi x dan y')
-        x = hepatitis_data.drop(["target"], axis = 1)
-        y = hepatitis_data["target"]
-        st.write(x.shape, y.shape)
-        st.write('')
-        st.write('9. Pisahkan data menjadi X_train, X_test, y_train, y_test dengan test_size = 0.20 menggunakan sklearn')
-        X_train, X_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 123)
-        st.write(X_train.shape,X_test.shape,y_train.shape,y_test.shape)
-        st.write('')
-        st.write('10. periksa nilai null pada train dan test, periksa value_count pada y_train dan y_test')
-        st.write(y_train.value_counts()/X_train.shape[0])
-        st.write('nilai null data train')
-        st.write(X_train.isna().sum())
-        st.write('nilai null data test')
-        st.write(X_test.isna().sum())
-        st.write('')
-        st.write('11. Menghitung Kolom Kategorikal dengan modus dan kolom Numerik dengan rata-rata')
-        df_cat_train = X_train[cat_cols]
-        df_cat_test = X_test[cat_cols]
-        cat_imputer = SimpleImputer(strategy='most_frequent')
-        st.write(cat_imputer.fit(df_cat_train))
-        df_cat_train = pd.DataFrame(cat_imputer.transform(df_cat_train), columns=cat_cols)
-        df_cat_test = pd.DataFrame(cat_imputer.transform(df_cat_test), columns=cat_cols)
-        df_num_train = X_train[num_cols]
-        df_num_test = X_test[num_cols]
-        num_imputer = SimpleImputer(strategy='median')
-        st.write(num_imputer.fit(df_num_train[num_cols]))
-        df_num_train = pd.DataFrame ( num_imputer.transform(df_num_train), columns= num_cols)
-        df_num_test =  pd.DataFrame(num_imputer.transform(df_num_test), columns=num_cols)
-        # Combine numeric and categorical in train
-        X_train = pd.concat([df_num_train, df_cat_train], axis = 1)
+# Split the data into features and target
+X = hepatitis_data.drop(["target"], axis=1)
+y = hepatitis_data["target"]
 
-        # Combine numeric and categorical in test
-        X_test = pd.concat([df_num_test, df_cat_test], axis = 1)
-        st.write('X train')
-        st.write(X_train.isna().sum())
-        st.write('X test')
-        st.write(X_test.isna().sum())
-        st.write('Mengonversi semua kolom kategorikal ke Format Bilangan Bulat sebelum dummifikasi (2,0 sebagai 2, dst.)')
-        # Train
-        X_train[cat_cols] = X_train[cat_cols].astype('int')
-        # Test
-        X_test[cat_cols] = X_test[cat_cols].astype('int')
-        st.write('')
-        st.write('12. mengecilkan kolom katergorikal')
-        ## Convert Categorical Columns to Dummies
-        # Train
-        X_train = pd.get_dummies(X_train, columns=cat_cols, drop_first=True)
-        # Test
-        X_test = pd.get_dummies(X_test, columns=cat_cols, drop_first=True)
-        st.write('X train')
-        st.write(X_train.columns)
-        st.write('X test')
-        st.write(X_test.columns)
-        st.write('')
-        st.write('13.Scale the numeric attributes ["age", "bili", "alk", "sgot", "albu", "protime"]')
-        #num_cols = ["age", "bili", "alk", "sgot", "albu", "protime"]
-        scaler = StandardScaler()
-        scaler.fit(X_train.loc[:,num_cols])
-        # scale on train
-        X_train.loc[:,num_cols] = scaler.transform(X_train.loc[:,num_cols])
-        #X_train[num_cols] = scaler.transform(X_train[num_cols])
-        # scale on test
-        X_test.loc[:,num_cols] = scaler.transform(X_test.loc[:,num_cols])
+# Split the data into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123, stratify=y)
 
-        st.write('METODE KLASIFIKASI SVM')
-        # Create a SVC classifier using a linear kernel
-        linear_svm = SVC(kernel='linear', C=1, random_state=0)
-        # Train the classifier
-        st.write(linear_svm.fit(X=X_train, y= y_train))
+# Impute missing values in categorical columns
+df_cat_train = X_train[cat_cols]
+df_cat_test = X_test[cat_cols]
 
-        ## Predict
-        train_predictions = linear_svm.predict(X_train)
-        test_predictions = linear_svm.predict(X_test)
-        ### Train data accuracy
-        st.write("TRAIN Conf Matrix : \n", confusion_matrix(y_train, train_predictions))
-        st.write("\nTRAIN DATA ACCURACY",accuracy_score(y_train,train_predictions))
-        st.write("\nTrain data f1-score for class '1'",f1_score(y_train,train_predictions,pos_label=1))
-        st.write("\nTrain data f1-score for class '2'",f1_score(y_train,train_predictions,pos_label=2))
-        ### Test data accuracy
-        st.write("\n\n--------------------------------------\n\n")
-        st.write("TEST Conf Matrix : \n", confusion_matrix(y_test, test_predictions))
-        st.write("\nTEST DATA ACCURACY",accuracy_score(y_test,test_predictions))
-        st.write("\nTest data f1-score for class '1'",f1_score(y_test,test_predictions,pos_label=1))
-        st.write("\nTest data f1-score for class '2'",f1_score(y_test,test_predictions,pos_label=2))
-        st.write('Create an SVC object and see the arguments') 
-        svc = SVC(kernel='rbf', random_state=0, gamma=0.01, C=1)
-        st.write(svc)
-        st.write('Train the model')
-        st.write(svc.fit(X=X_train, y= y_train))
+cat_imputer = SimpleImputer(strategy='most_frequent')
+df_cat_train = pd.DataFrame(cat_imputer.fit_transform(df_cat_train), columns=cat_cols)
+df_cat_test = pd.DataFrame(cat_imputer.transform(df_cat_test), columns=cat_cols)
+
+# Impute missing values in numeric columns
+df_num_train = X_train[num_cols]
+df_num_test = X_test[num_cols]
+
+num_imputer = SimpleImputer(strategy='median')
+df_num_train = pd.DataFrame(num_imputer.fit_transform(df_num_train), columns=num_cols)
+df_num_test = pd.DataFrame(num_imputer.transform(df_num_test), columns=num_cols)
+
+# Combine numeric and categorical columns in train and test sets
+X_train = pd.concat([df_num_train, df_cat_train], axis=1)
+X_test = pd.concat([df_num_test, df_cat_test], axis=1)
+
+# Convert categorical columns to integers
+X_train[cat_cols] = X_train[cat_cols].astype('int')
+X_test[cat_cols] = X_test[cat_cols].astype('int')
+
+# Convert categorical columns to dummies
+X_train = pd.get_dummies(X_train, columns=cat_cols, drop_first=True)
+X_test = pd.get_dummies(X_test, columns=cat_cols, drop_first=True)
+
+# Ensure the same columns in both train and test data
+X_test = X_test.reindex(columns=X_train.columns, fill_value=0)
+
+# Scale numeric features
+scaler = StandardScaler()
+X_train[num_cols] = scaler.fit_transform(X_train[num_cols])
+X_test[num_cols] = scaler.transform(X_test[num_cols])
+
+# Train the SVC model
+svc = SVC(kernel='rbf', random_state=0, gamma=0.01, C=1, class_weight='balanced')
+svc.fit(X_train, y_train)
+
+# Define the prediction function
+def predict_hepatitis(age, gender, steroid, antivirals, fatigue, malaise, anorexia, liverBig, liverFirm, spleen, spiders, ascites, varices, histology, bili, alk, sgot, albu, protime):
+    # Creating a DataFrame for the new input
+    new_data = pd.DataFrame({
+        'age': [age],
+        'gender': [gender],
+        'steroid': [steroid],
+        'antivirals': [antivirals],
+        'fatigue': [fatigue],
+        'malaise': [malaise],
+        'anorexia': [anorexia],
+        'liverBig': [liverBig],
+        'liverFirm': [liverFirm],
+        'spleen': [spleen],
+        'spiders': [spiders],
+        'ascites': [ascites],
+        'varices': [varices],
+        'histology': [histology],
+        'bili': [bili],
+        'alk': [alk],
+        'sgot': [sgot],
+        'albu': [albu],
+        'protime': [protime]
+    })
+
+    # Preprocess the new data
+    new_data[cat_cols] = new_data[cat_cols].astype('int')
+    new_data = pd.get_dummies(new_data, columns=cat_cols, drop_first=True)
+
+    # Align new data columns with training data columns
+    new_data = new_data.reindex(columns=X_train.columns, fill_value=0)
+
+    # Scale the numeric features
+    new_data[num_cols] = scaler.transform(new_data[num_cols])
+
+    # Print the new_data for debugging purposes
+    # print("Processed new data:\n", new_data)
+
+    # Make the prediction
+    prediction = svc.predict(new_data)
+    
+    # Print prediction result for debugging purposes
+    # print("Prediction result:", prediction)
+
+    # Interpret the prediction
+    result = "Anda terdiagnosa hepatitis" if prediction == 1 else "Tidak terdiagnosa hepatitis"
+    return result
+
+# Example usage:
+# Using extreme values that are more likely to indicate a diagnosis of hepatitis
+# result = predict_hepatitis(age=60, gender=1, steroid=1, antivirals=2, fatigue=1, malaise=1, anorexia=1, liverBig=1, liverFirm=1, spleen=1, spiders=1, ascites=1, varices=1, histology=1, bili=4.0, alk=250, sgot=500, albu=2.1, protime=80)
+# print(result)
+
+# # Example usage:
+# # Using values that are more likely to indicate no diagnosis of hepatitis
+# result = predict_hepatitis(age=40, gender=2, steroid=2, antivirals=2, fatigue=2, malaise=2, anorexia=2, liverBig=2, liverFirm=2, spleen=2, spiders=2, ascites=2, varices=2, histology=2, bili=0.39, alk=33, sgot=13, albu=6.0, protime=10)
+# print(result)
+
+age = st.number_input('Masukkan umur',min_value=1,max_value=100)
+
+col1, col2 = st.columns(2)
+with col1:
+    gender = st.radio(
+        "Gender",
+        ["Laki-Laki","Perempuan"])
+    if gender == "Laki-Laki":
+            gender=1
+    else:
+            gender=2
+
+    antivirals = st.radio(
+        "antivirals",
+        ["Yes","No"])
+    if antivirals == "Laki-Laki":
+            antivirals=1
+    else:
+            antivirals=2
+
+    malaise = st.radio(
+        "malaise",
+        ["Yes","No"])
+    if malaise == "Laki-Laki":
+            malaise=1
+    else:
+            malaise=2
+
+    liverBig = st.radio(
+        "liverBig",
+        ["Yes","No"])
+    if liverBig == "Laki-Laki":
+            liverBig=1
+    else:
+            liverBig=2
+
+    spiders = st.radio(
+        "spiders",
+        ["Yes","No"])
+    if spiders == "Yes":
+        spiders=1
+    else:
+        spiders=2
+
+    varices = st.radio(
+        "varices",
+        ["Yes","No"])
+    if varices == "Yes":
+        varices=1
+    else:
+        varices=2
+    
+    histology = st.radio(
+        "histology",
+        ["Yes","No"])
+    if histology == "Yes":
+        histology=1
+    else:
+        histology=2
+with col2:
+    steroid = st.radio(
+        "Steroid",
+        ["Yes","No"])
+    if steroid == "Yes":
+        steroid=1
+    else:
+        steroid=2
+
+    fatigue = st.radio(
+        "fatigue",
+        ["Yes","No"])
+    if fatigue == "Yes":
+        fatigue=1
+    else:
+        fatigue=2
+
+    anorexia = st.radio(
+        "anorexia",
+        ["Yes","No"])
+    if anorexia == "Yes":
+        anorexia=1
+    else:
+        anorexia=2
+    
+    liverFirm = st.radio(
+        "liverFirm",
+        ["Yes","No"])
+    if liverFirm == "Yes":
+        liverFirm=1
+    else:
+        liverFirm=2
+
+    spleen = st.radio(
+        "spleen",
+        ["Yes","No"])
+    if spleen == "Yes":
+        spleen=1
+    else:
+        spleen=2
+
+    ascites = st.radio(
+        "ascites",
+        ["Yes","No"])
+    if ascites == "Yes":
+        ascites=1
+    else:
+        ascites=2
+
+bili = st.slider(
+    "Select a range of bili",
+    0.0, 100.0, (5.0))
 
 
-        ## Predict
-        train_predictions = svc.predict(X_train)
-        test_predictions = svc.predict(X_test)
-        ### Train data accuracy
-        st.write("TRAIN Conf Matrix : \n", confusion_matrix(y_train, train_predictions))
-        st.write("\nTRAIN DATA ACCURACY",accuracy_score(y_train,train_predictions))
-        st.write("\nTrain data f1-score for class '1'",f1_score(y_train,train_predictions,pos_label=1))
-        st.write("\nTrain data f1-score for class '2'",f1_score(y_train,train_predictions,pos_label=2))
-        ### Test data accuracy
-        st.write("\n\n--------------------------------------\n\n")
-        st.write("TEST Conf Matrix : \n", confusion_matrix(y_test, test_predictions))
-        st.write("\nTEST DATA ACCURACY",accuracy_score(y_test,test_predictions))
-        st.write("\nTest data f1-score for class '1'",f1_score(y_test,test_predictions,pos_label=1))
-        st.write("\nTest data f1-score for class '2'",f1_score(y_test,test_predictions,pos_label=2))
-        st.write('')
-        st.write('14. SVM dengan Pencarian Grid untuk Penyetelan Paramater')
-        svc_grid = SVC()
-        param_grid = { 
-                        'C': [0.001, 0.01, 0.1, 1, 10, 100 ],
-                        'gamma': [0, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100], 
-                        'kernel':['linear', 'rbf', 'poly' ]
-                    }
+alk = st.slider(
+    "Select a range of alk",
+    0.0, 1000.0, (30.0))
 
-        svc_cv_grid = GridSearchCV(estimator = svc_grid, param_grid = param_grid, cv = 5, verbose=3)
-        st.write('Fit the grid search model')
-        st.write(svc_cv_grid.fit(X=X_train, y=y_train))
-        st.write('Get the best parameters')
-        st.write(svc_cv_grid.best_params_)
-        svc_best = svc_cv_grid.best_estimator_
-        ## Predict
-        train_predictions = svc_best.predict(X_train)
-        test_predictions = svc_best.predict(X_test)
 
-        st.write("TRAIN DATA ACCURACY",accuracy_score(y_train,train_predictions))
-        st.write("\nTrain data f1-score for class '1'",f1_score(y_train,train_predictions,pos_label=1))
-        st.write("\nTrain data f1-score for class '2'",f1_score(y_train,train_predictions,pos_label=2))
+sgot = st.slider(
+    "Select a range of sgot",
+    0.0, 1000.0, (225.0))
+ 
 
-        ### Test data accuracy
-        st.write("\n\n--------------------------------------\n\n")
-        st.write("TEST DATA ACCURACY",accuracy_score(y_test,test_predictions))
-        st.write("\nTest data f1-score for class '1'",f1_score(y_test,test_predictions,pos_label=1))
-        st.write("\nTest data f1-score for class '2'",f1_score(y_test,test_predictions,pos_label=2))
+albu = st.slider(
+    "Select a range of albu",
+    0.0, 10.0, (5.0))
+ 
 
-        st.write('')
-        st.write('15. Simpan model')
-        filename = 'model_hepatitis.sav'
-        pickle.dump(linear_svm, open(filename, 'wb'))
-        with open("model_hepatitis.sav", "rb") as file:
-            btn = st.download_button(
-                    label="Download Hasil Model Hepatitis",
-                    data=file,
-                    file_name=filename,
-                    mime="sav"
-                )
-else:
-    st.subheader("Contoh Dataset Hepatitis")
-    with open("hepatitis.csv", "rb") as file:
-            btn = st.download_button(
-                    label="Download Contoh Hepatitis.csv",
-                    data=file,
-                    file_name='hepatitis.csv',
-                    mime="text/csv"
-                )
+protime = st.slider(
+    "Select a range of protime",
+    0, 1000, (30))
+ 
+if st.button("Cek Hasil"):
+    result = predict_hepatitis(age, gender, steroid, antivirals, fatigue, malaise, anorexia, liverBig, liverFirm, spleen, spiders, ascites, varices, histology, bili, alk, sgot, albu, protime)
+    st.write(result)
